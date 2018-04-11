@@ -1,23 +1,19 @@
 const fetch = require('node-fetch');
+const queryString = require('query-string');
 const crypto = require('crypto');
 
-const getQueryString = options =>
-  Object.entries(options)
-    .map(entry => `${entry[0]}=${entry[1]}`)
-    .join('&');
-
 exports.sourceNodes = async (
-  { boundActionCreators: { createNode } },
-  { plugins, ...options },
+  { boundActionCreators: { createNode }, createNodeId },
+  { plugins, ...options }
 ) => {
-  const apiUrl = `https://pixabay.com/api/?${getQueryString(options)}`;
+  const apiUrl = `https://pixabay.com/api/?${queryString.stringify(options)}`;
   const response = await fetch(apiUrl);
   const data = await response.json();
 
   data.hits.forEach(photo => {
     createNode({
       ...photo,
-      id: `pixabay-photo-${photo.id}`,
+      id: createNodeId(`pixabay-photo-${photo.id}`),
       parent: null,
       children: [],
       internal: {
@@ -26,8 +22,8 @@ exports.sourceNodes = async (
         contentDigest: crypto
           .createHash('md5')
           .update(JSON.stringify(photo))
-          .digest('hex'),
-      },
+          .digest('hex')
+      }
     });
   });
 };
